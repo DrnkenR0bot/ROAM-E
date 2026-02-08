@@ -1,20 +1,28 @@
 import time
 import board
 import pwmio
-import digitalio
-from adafruit_motor import servo
+#import simpleio
+#import digitalio
 import adafruit_hcsr04
-from motor_dr import Motor, Loco
+from adafruit_motor import servo
+from note_frequencies import cMaj_scale
+#from motor_dr import Motor, Loco
 
+
+# Initialize piezo buzzer
+piezo = pwmio.PWMOut(board.GP22, variable_frequency=True)
 
 # Initialize sonar
 sonar = adafruit_hcsr04.HCSR04(trigger_pin=board.GP1, echo_pin=board.GP0)
 
+# Initialize servos
 pa = pwmio.PWMOut(board.GP12, duty_cycle=2**15, frequency=100)
 pb = pwmio.PWMOut(board.GP13, duty_cycle=2**15, frequency=100)
-
 sa = servo.Servo(pa)
 sb = servo.Servo(pb)
+
+
+
 
 
 
@@ -39,10 +47,26 @@ def statistical_distance(
         time.sleep(sample_interval)
     return sum(d)/samples
 
+def beep(buzzer, frequency, duration: float = 0.5, volume_exponent: int = 11):
+    if volume_exponent > 15:
+        ON = 2**15
+    else:
+        ON = 2**volume_exponent
+    OFF = 0
+    buzzer.frequency = int(frequency)
+    buzzer.duty_cycle = ON
+    time.sleep(duration)
+    buzzer.duty_cycle = OFF
 
 
 
 
-while True:
-    print(statistical_distance(cm2xscale=1.))
-    time.sleep(1)
+if __name__ == "__main__":
+
+    for key, value in cMaj_scale.items():
+        if key[0] == "G":
+            beep(piezo, cMaj_scale[key], duration=0.1)
+
+    while True:
+        print(statistical_distance(cm2xscale=1.))
+        time.sleep(1)

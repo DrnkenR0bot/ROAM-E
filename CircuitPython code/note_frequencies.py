@@ -1,5 +1,8 @@
 """
 Supplies note frequencies (Hz) for simpleio.tone() calls.
+
+Reference:
+https://muted.io/note-frequencies/
 """
 from collections import OrderedDict
 

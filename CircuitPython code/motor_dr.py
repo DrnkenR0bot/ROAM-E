@@ -1,5 +1,12 @@
 """
 DrnkenR0bot DC motor library for 2 motor locomotion.
+
+Motor calibration might be necessary due to manufacturing differences
+between motors. Use "down_calibrate" to scale the max speed of an
+individual motor through trial and error until straight forward
+driving is achieved. 
+Note: If robot skews right, down calibrate left motor.
+
 """
 import time
 import pwmio

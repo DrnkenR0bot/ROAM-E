@@ -14,7 +14,8 @@ from motor_dr import Motor, Loco
 piezo = pwmio.PWMOut(board.GP22, variable_frequency=True)
 
 # Initialize sonar
-sonar = adafruit_hcsr04.HCSR04(trigger_pin=board.GP1, echo_pin=board.GP0)
+sonar = adafruit_hcsr04.HCSR04(trigger_pin=board.GP28, echo_pin=board.GP7)
+cliff_sensor = adafruit_hcsr04.HCSR04(trigger_pin=board.GP1, echo_pin=board.GP0)
 
 # Initialize neck servos
 pa = pwmio.PWMOut(board.GP12, duty_cycle=2**15, frequency=100)
@@ -53,6 +54,12 @@ def statistical_distance(
         d.append(distance(cm2xscale=cm2xscale))
         time.sleep(sample_interval)
     return sum(d)/samples
+
+def cliff_detect(ground_distance = 10., delta = 5.):
+    if cliff_sensor.distance >= (ground_distance + delta):
+        return True
+    else:
+        return False
 
 def beep(buzzer, frequency, duration: float = 0.5, volume_exponent: int = 11):
     if volume_exponent > 15:
@@ -100,4 +107,6 @@ if __name__ == "__main__":
 
     while True:
         print(statistical_distance())
+        if cliff_detect():
+            print("CLIF DETECTED!")
         time.sleep(1)

@@ -1,4 +1,3 @@
-import sys
 import time
 import board
 import pwmio
@@ -115,11 +114,10 @@ def cliff_detect(ground_distance:float = 15., delta:float = 5., sleep_delay:floa
 def cliff_response(ground_distance = 15.) -> bool:
     loco.stop()
     head(90.)
-    neck(10.)
-    data = scan_horizon()
-    (_, max_distance) = find_max_distance(data)
-    neck(90., pause_time=0.1)
-    if max_distance >= ground_distance:
+    neck(10.) # drop the head
+    eye_measurement = statistical_distance(samples=30, print_distance=True)
+    neck(90.) # lift the head
+    if eye_measurement >= ground_distance:
         print("CLIFF CONFIRMED! Avoiding.")
         loco.backward()
         time.sleep(3)

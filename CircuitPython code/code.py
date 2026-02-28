@@ -3,8 +3,13 @@ import board
 import pwmio
 import adafruit_hcsr04
 from adafruit_motor import servo
-from note_frequencies import cMaj_scale
+from note_frequencies import cMaj_scale as tone_scale
 from motor_dr import Motor, Loco
+
+#
+# Settings
+#
+default_ground_distance = 80.
 
 #
 # Component initialization
@@ -33,7 +38,6 @@ right_motor = Motor(board.GP8, board.GP9, down_calibrate=1.0)
 loco = Loco(left_motor, right_motor)
 loco.stop()
 
-
 #
 # Function definitions
 #
@@ -48,6 +52,55 @@ def beep(frequency, buzzer=piezo, duration: float = 0.5, volume_exponent: int = 
     buzzer.duty_cycle = ON
     time.sleep(duration)
     buzzer.duty_cycle = OFF
+
+def neck(angle, pause_time: float = 2.):
+    sa.angle = angle
+    time.sleep(pause_time)
+    return angle
+
+def head(angle, pause_time: float = 0.2):
+    sb.angle = angle
+    time.sleep(pause_time)
+    return angle
+
+class EmotionalResponse:        
+    @property
+    def confused(self):
+        print("~~~ Confused ~~~")
+        loco.stop()
+        neck(120, pause_time=0.1)
+        for _ in range(3):
+            head(45, pause_time=0.5)
+            head(135, pause_time=0.5)
+        head(90.)
+        neck(90., pause_time=3)
+        print("~~~ Done ~~~")
+
+    @property
+    def startled(self):
+        print("~~~ Startled ~~~")
+        loco.stop()
+        neck(120, pause_time=1)
+        beep(tone_scale["B5"], duration=0.5)
+        neck(70, pause_time=1)
+        beep(tone_scale["B5"], duration=0.5)
+        beep(tone_scale["C5"], duration=0.5)
+        beep(tone_scale["G5"], duration=0.5)
+        neck(90, pause_time=5)
+        print("~~~ Done ~~~")
+
+    @property
+    def failure(self):
+        """Program fail response."""
+        print("I HAVE FAILED YOU!!!")
+        loco.stop()
+        neck(20, pause_time=0.1)
+        beep(tone_scale["E3"], duration=1.)
+        beep(tone_scale["D3"], duration=1.)
+        beep(tone_scale["C3"], duration=2.)
+
+# Initialize emotion class
+emotion = EmotionalResponse()
 
 def distance(cm2xscale: float = 1.):
     """
@@ -72,16 +125,6 @@ def statistical_distance(
         print(f"Statistical distance = {result}")
     return result
 
-def neck(angle, pause_time: float = 2.):
-    sa.angle = angle
-    time.sleep(pause_time)
-    return angle
-
-def head(angle, pause_time: float = 0.2):
-    sb.angle = angle
-    time.sleep(pause_time)
-    return angle
-
 def scan_horizon():
     data = []
     head(90)
@@ -105,13 +148,13 @@ class CliffError(Exception):
     """Error to be raised when a cliff is detected. Allows function interrupt."""
     pass
 
-def cliff_detect(ground_distance:float = 15., delta:float = 5., sleep_delay:float = 0.1) -> None:
+def cliff_detect(ground_distance:float = default_ground_distance, delta:float = 5., sleep_delay:float = 0.1) -> None:
     if cliff_sensor.distance >= (ground_distance + delta):
         raise CliffError
     # Give cliff_sensor some breathing room to avoid comm errors.
     time.sleep(sleep_delay)
 
-def cliff_response(ground_distance = 15.) -> bool:
+def cliff_response(ground_distance:float = default_ground_distance) -> bool:
     loco.stop()
     head(90.)
     neck(10.) # drop the head
@@ -123,6 +166,7 @@ def cliff_response(ground_distance = 15.) -> bool:
         time.sleep(3)
         loco.right_spin()
         time.sleep(3)
+        loco.stop()
         return True
     else:
         print("Upon closer inspection, there is no cliff. Continuing.")
@@ -182,6 +226,7 @@ def find_path():
     else:
         loco.stop()
         print("I DON'T KNOW WHAT TO DO!!!")
+        emotion.confused
         return False
 
 def drive(forward_speed: float = 1., wall_distance: float = 30., scan_interval: float = 0.5):
@@ -193,7 +238,7 @@ def drive(forward_speed: float = 1., wall_distance: float = 30., scan_interval: 
             if time.monotonic() >= start_time + scan_interval:
                 if statistical_distance() <= wall_distance:
                     loco.stop()
-                    # throw in an emotional response here
+                    emotion.startled
                     break
                 else:
                     start_time = time.monotonic()
@@ -206,7 +251,7 @@ def drive(forward_speed: float = 1., wall_distance: float = 30., scan_interval: 
 if __name__ == "__main__":
 
     # Power up buzzer tones
-    for key, tone in cMaj_scale.items():
+    for key, tone in tone_scale.items():
         if key[0] == "G":
             beep(tone, duration=0.1)
 
@@ -216,7 +261,4 @@ if __name__ == "__main__":
         drive(forward_speed=0.8)
         keep_looping = find_path()
 
-    # Program fail tones
-    beep(cMaj_scale["E3"], duration=1.)
-    beep(cMaj_scale["D3"], duration=1.)
-    beep(cMaj_scale["C3"], duration=2.)
+    emotion.failure

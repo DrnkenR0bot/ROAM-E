@@ -17,18 +17,27 @@ class Motor:
         self.IN2 = pwmio.PWMOut(pin2, frequency=frequency)
         self.max_duty_cycle = int(65535*down_calibrate)
         self.min_duty_cycle = 0
+        self.floor_speed = 0.5
 
     def stop(self):
         self.IN1.duty_cycle = 0
         self.IN2.duty_cycle = 0
 
     def forward(self, speed: float = 1.0):
-        self.IN1.duty_cycle = int(self.max_duty_cycle*speed)
+        if speed < self.floor_speed:
+            true_speed = self.floor_speed
+        else:
+            true_speed = speed
+        self.IN1.duty_cycle = int(self.max_duty_cycle*true_speed)
         self.IN2.duty_cycle = 0 
 
     def backward(self, speed: float = 1.0):
+        if speed < self.floor_speed:
+            true_speed = self.floor_speed
+        else:
+            true_speed = speed
         self.IN1.duty_cycle = 0
-        self.IN2.duty_cycle = int(self.max_duty_cycle*speed)
+        self.IN2.duty_cycle = int(self.max_duty_cycle*true_speed)
 
 
 class Loco:

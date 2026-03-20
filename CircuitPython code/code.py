@@ -187,8 +187,8 @@ def match_range(
         else:
             return False
     def check_distance(distance, tolerance):
-        if cliff_detect():
-            raise CliffError
+        #if cliff_detect():
+        #    raise CliffError
         if range(statistical_distance(print_distance=False), distance, tolerance):
             loco.stop()
             return True
@@ -234,7 +234,7 @@ def drive(forward_speed: float = 1., wall_distance: float = 30., scan_interval: 
     start_time = 0.
     try:
         while True:
-            cliff_detect()
+            #cliff_detect()
             if time.monotonic() >= start_time + scan_interval:
                 if statistical_distance() <= wall_distance:
                     loco.stop()
